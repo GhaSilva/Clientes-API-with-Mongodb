@@ -1,10 +1,14 @@
 package br.com.ghabriel.ClientesApp.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.ghabriel.ClientesApp.documents.Cliente;
+import br.com.ghabriel.ClientesApp.resposes.Response;
 import br.com.ghabriel.ClientesApp.services.ClienteService;
 
 @RestController
@@ -25,30 +30,40 @@ public class ClienteController {
 	private ClienteService clienteService;
 	
 	@GetMapping
-	public ResponseEntity<List<Cliente>> listarTodos(){
-		return ResponseEntity.ok(this.clienteService.listarTodos());
+	public ResponseEntity<Response<List<Cliente>>>  listarTodos(){
+		return ResponseEntity.ok(new Response<List<Cliente>>(this.clienteService.listarTodos()));
 	}
 	
 	@GetMapping(path = "/{id}")
 	public ResponseEntity<Optional<Cliente>> listarPorId(@PathVariable(name = "id") String id){
 		return ResponseEntity.ok(this.clienteService.listarPorId(id));
 	}
-	
+	 
 	@PostMapping
-	public ResponseEntity<Cliente> cadastrar(@RequestBody Cliente cliente){
-		return ResponseEntity.ok(this.clienteService.cadastrar(cliente));
+	public ResponseEntity<Response<Cliente>> cadastrar(@Valid @RequestBody Cliente cliente, BindingResult result){
+		if(result.hasErrors()) {
+			List<String> erros = new ArrayList<String>();
+			result.getAllErrors().forEach(erro -> erros.add(erro.getDefaultMessage()));
+			return ResponseEntity.badRequest().body(new Response<Cliente>(erros));
+		}
+		return ResponseEntity.ok(new Response<Cliente>(this.clienteService.cadastrar(cliente)));
 	}
 
 	@PutMapping(path = "/{id}")
-	public ResponseEntity<Cliente> atualizar(@PathVariable(name = "id") String id, @RequestBody Cliente cliente){
+	public ResponseEntity<Response<Cliente>> atualizar(@PathVariable(name = "id") String id,@Valid @RequestBody Cliente cliente, BindingResult result){
+		if(result.hasErrors()) {
+			List<String> erros = new ArrayList<String>();
+			result.getAllErrors().forEach(erro -> erros.add(erro.getDefaultMessage()));
+			return ResponseEntity.badRequest().body(new Response<Cliente>(erros));
+		}
 		cliente.setId(id);
-		return ResponseEntity.ok(this.clienteService.atualizar(cliente));
+		return ResponseEntity.ok(new Response<Cliente>(this.clienteService.atualizar(cliente)));
 	}
 	
 	@DeleteMapping(path = "/{id}")
-	public ResponseEntity<Integer> remover(@PathVariable(name = "id") String id){
+	public ResponseEntity<Response<Integer>> remover(@PathVariable(name = "id") String id){
 		this.clienteService.remover(id);
-		return ResponseEntity.ok(1);
+		return ResponseEntity.ok(new Response<Integer>(1));
 	}
 	
 }
